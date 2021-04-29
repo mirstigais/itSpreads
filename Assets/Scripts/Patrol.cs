@@ -10,8 +10,12 @@ public class Patrol : MonoBehaviour
     [SerializeField]
     int speed;
 
-    private int waypointIndex;
+    public int waypointIndex;
     private float dist;
+
+    [HideInInspector]
+    public Vector3 origin;
+    public Vector3 destination;
 
     void Start()
     {
@@ -21,7 +25,9 @@ public class Patrol : MonoBehaviour
 
     void Update()
     {
-        dist = Vector3.Distance(transform.position, waypoints[waypointIndex].position);
+        destination = waypoints[waypointIndex].transform.position;
+        origin = transform.position;
+        dist = Vector3.Distance(origin, destination);
         if (dist < 1f) IncreaseIndex();
         PatrolAround();
     }

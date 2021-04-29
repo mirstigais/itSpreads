@@ -5,82 +5,114 @@ using UnityEngine;
 public class FOV : MonoBehaviour
 {
 
-    [SerializeField]
-    float fov = 90f , 
-    viewDistance = 50, 
-    angle = 0f;
-    
-    [SerializeField]
-    int rayCount = 50;
- 
+    public float viewRadius = 90f;
+    [Range(0,360)]
+    public float viewAngle = 50;
+
+    public LayerMask targetMask;
+    public LayerMask obstacleMask;
+
+    [HideInInspector]
+    public List<Transform> visibleTargets = new List<Transform>();
+
+    public float meshResolution;
+
     void Start()
     {
-        Mesh mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
-
-        Vector3 origin = Vector3.zero;
-        float angleIncrease = fov / rayCount;
- 
-
-        Vector3[] vertices = new Vector3[rayCount + 1 + 1];
-        Vector2[] uv = new Vector2[vertices.Length];
-        int[] triangles = new int[rayCount * 3];
-
-        vertices[0] = origin;
-
-        int vertexIndex = 1;
-        int triangleIndex = 0;
-        for (int i= 0; i <= rayCount; i++)
-        {
-            Vector3 vertex;
-            RaycastHit hit;
-            if (Physics.Raycast(origin,GetVectorFromAngle(angle),out hit,viewDistance)){
-                //hit object
-                vertex = hit.point;
-                Debug.Log("hit object");
-            }
-            else
-            {
-                //no hit
-                vertex = origin + GetVectorFromAngle(angle) * viewDistance;
-                Debug.Log("no hit");
-            }
-
-            vertices[vertexIndex] = vertex;
-
-            if (i > 0)
-            {
-                triangles[triangleIndex + 0] = 0;
-                triangles[triangleIndex + 1] = vertexIndex - 1;
-                triangles[triangleIndex + 2] = vertexIndex;
-
-                triangleIndex += 3;
-            }
-
-            vertexIndex++;
-
-            angle -= angleIncrease; //counter clockwise
-        }
-
-        triangles[0] = 0;
-        triangles[1] = 1;
-        triangles[2] = 2;
-
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.triangles = triangles;
+        StartCoroutine("FindTargetsWithDelay", .2f);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        DrawFieldOfView();
     }
 
-    Vector3 GetVectorFromAngle(float angle)
+    //co-routine
+    IEnumerator FindTargetsWithDelay(float delay)
     {
-        //angle 0 -> 360
-        float angleRad = angle * (Mathf.PI / 180f);
-        return new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+        while (true)
+        {
+            yield return new WaitForSeconds(delay);
+            FindVisibleTargets();
+        }
+    }
+
+    void FindVisibleTargets()
+    {
+        visibleTargets.Clear();
+        Collider[] targetsInViewRadius = Physics.OverlapSphere(transform.position, viewRadius, targetMask);
+
+        for (int i = 0; i < targetsInViewRadius.Length; i++)
+        {
+            Transform target = targetsInViewRadius[i].transform;
+            Vector3 dirToTarget = (target.position - transform.position).normalized;
+            if (Vector3.Angle(transform.forward, dirToTarget) < viewAngle / 2)
+            {
+                float dstToTarget = Vector3.Distance(transform.position, target.position);
+
+                //checks if we can see the target
+
+                if (!Physics.Raycast(transform.position, dirToTarget, dstToTarget, obstacleMask))
+                {
+                    visibleTargets.Add(target);
+                }
+            }
+        }
+    }
+
+    void DrawFieldOfView()
+    {
+        //get number of rays per degree
+        int rayCount = Mathf.RoundToInt(viewAngle * meshResolution);
+        float rayAngleSize = viewAngle / rayCount;
+        List<Vector3> viewPoints = new List<Vector3>();
+
+        for (int i = 0; i<= rayCount; i++)
+        {
+            //Some trigonometry nightmare
+            float angle = transform.eulerAngles.y - viewAngle / 2 + rayAngleSize * i;
+            //Debug.DrawLine(transform.position, transform.position + DirFromAngle(angle, true) * viewRadius, Color.red);
+
+            ViewCastInfo newViewCast = viewCast(angle);
+            viewPoints.Add(newViewCast.point);
+        }
+
+    }
+
+    ViewCastInfo viewCast (float globalAngle)
+    {
+        Vector3 dir = DirFromAngle(globalAngle, true);
+        RaycastHit hit;
+
+        if (Physics.Raycast(transform.position, dir, out hit, viewRadius, obstacleMask))
+        {
+            return new ViewCastInfo (true, hit.point, hit.distance, globalAngle);
+        } else
+        {
+            return new ViewCastInfo(false, transform.position + dir * viewRadius, viewRadius, globalAngle);
+        }
+    }
+
+    //Makes an angle and spits out a direction
+    public Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
+    {
+        if (!angleIsGlobal) angleInDegrees += transform.eulerAngles.y;   
+        return new Vector3(Mathf.Sin(angleInDegrees * Mathf.Deg2Rad), 0, Mathf.Cos(angleInDegrees * Mathf.Deg2Rad));
+    }
+
+    public struct ViewCastInfo
+    {
+        public bool hit;
+        public Vector3 point;
+        public float dst;
+        public float angle;
+
+        public ViewCastInfo(bool _hit, Vector3 _point, float _dst, float _angle)
+        {
+            hit = _hit;
+            point = _point;
+            dst = _dst;
+            angle = _angle;
+        }
     }
 }
