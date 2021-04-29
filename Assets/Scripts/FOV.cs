@@ -16,13 +16,20 @@ public class FOV : MonoBehaviour
     public List<Transform> visibleTargets = new List<Transform>();
 
     public float meshResolution;
+    
+    public MeshFilter viewMeshFilter;
+    Mesh viewMesh;
 
     void Start()
     {
+        viewMesh = new Mesh();
+        viewMesh.name = "View Mesh";
+        viewMeshFilter.mesh = viewMesh;
+
         StartCoroutine("FindTargetsWithDelay", .2f);
     }
 
-    void Update()
+    void LateUpdate()
     {
         DrawFieldOfView();
     }
@@ -77,6 +84,31 @@ public class FOV : MonoBehaviour
             viewPoints.Add(newViewCast.point);
         }
 
+        //Setting the vertices for mesh
+        int vertexCount = viewPoints.Count + 1;
+        Vector3[] vertices = new Vector3[vertexCount];
+        int[] triangles = new int[(vertexCount -2 ) * 3];
+
+        vertices[0] = Vector3.zero;
+        for (int i = 0; i < vertexCount - 1; i++)
+        {
+            //starting at i+1 to not overwrite the first vertice
+            vertices[i + 1] = transform.InverseTransformPoint(viewPoints[i]);
+
+            if (i < vertexCount - 2)
+            {
+                //first vertex of each triangle
+                triangles[i * 3] = 0;
+
+                triangles[i * 3 + 1] = i + 1;
+                triangles[i * 3 + 2] = i + 2;
+            }
+        }
+
+        viewMesh.Clear();
+        viewMesh.vertices = vertices;
+        viewMesh.triangles = triangles;
+        viewMesh.RecalculateNormals();
     }
 
     ViewCastInfo viewCast (float globalAngle)
@@ -93,7 +125,7 @@ public class FOV : MonoBehaviour
         }
     }
 
-    //Makes an angle and spits out a direction
+    //Gets an angle and spits out a direction
     public Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
     {
         if (!angleIsGlobal) angleInDegrees += transform.eulerAngles.y;   
