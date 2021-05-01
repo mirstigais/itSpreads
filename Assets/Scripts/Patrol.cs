@@ -17,10 +17,14 @@ public class Patrol : MonoBehaviour
     public Vector3 origin;
     public Vector3 destination;
 
+    private Animator anim;
+
     void Start()
     {
         waypointIndex = 0;
         transform.LookAt(waypoints[waypointIndex].position);
+
+        anim = GetComponentInChildren<Animator>();
     }
 
     void Update()
@@ -35,6 +39,7 @@ public class Patrol : MonoBehaviour
     void PatrolAround()
     {
         transform.Translate(Vector3.forward * speed * Time.deltaTime);
+        anim.SetBool("isWalking", true);
     }
 
     void IncreaseIndex()

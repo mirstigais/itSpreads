@@ -7,6 +7,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     float moveSpeed = 4f;
     Vector3 forward, right;
+    private Animator anim;
+
+    private void Start()
+    {
+        
+        anim = GetComponent<Animator>();
+    }
 
     void Update()
     {
@@ -19,6 +26,10 @@ public class PlayerController : MonoBehaviour
         Vector3 direction = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
         if (direction.magnitude > 0.1f)
         {
+
+            //should be in it's own class
+            anim.SetBool("isWalking", true);
+
             Vector3 rightMovement = right * moveSpeed * Time.deltaTime * Input.GetAxisRaw("Horizontal");
             Vector3 upMovement = forward * moveSpeed * Time.deltaTime * Input.GetAxisRaw("Vertical");
 
@@ -26,6 +37,7 @@ public class PlayerController : MonoBehaviour
             transform.forward = heading;
             transform.position += heading * moveSpeed * Time.deltaTime;
         }
+        else anim.SetBool("isWalking", false);
 
     }
 }
