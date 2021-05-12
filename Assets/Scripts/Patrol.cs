@@ -17,10 +17,14 @@ public class Patrol : MonoBehaviour
     public Vector3 origin;
     public Vector3 destination;
 
-    private Animator anim;
-
+    [HideInInspector]
+    public Animator anim;
+    EnemyState stateScript;
+    EnemyState.EnemyStates state;
     void Start()
     {
+        stateScript = this.transform.GetComponent<EnemyState>();
+        state = stateScript.state;
         waypointIndex = 0;
         transform.LookAt(waypoints[waypointIndex].position);
 
@@ -29,11 +33,17 @@ public class Patrol : MonoBehaviour
 
     void Update()
     {
-        destination = waypoints[waypointIndex].transform.position;
-        origin = transform.position;
-        dist = Vector3.Distance(origin, destination);
-        if (dist < 1f) IncreaseIndex();
-        PatrolAround();
+        
+        EnemyState.EnemyStates state = stateScript.state;
+        if (state == EnemyState.EnemyStates.patrolling)
+        {
+            //Debug.Log("Is patrolling");
+            destination = waypoints[waypointIndex].transform.position;
+            origin = transform.position;
+            dist = Vector3.Distance(origin, destination);
+            if (dist < 1f) IncreaseIndex();
+            PatrolAround();
+        }
     }
 
     void PatrolAround()

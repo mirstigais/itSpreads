@@ -9,9 +9,16 @@ public class PlayerController : MonoBehaviour
     Vector3 forward, right;
     private Animator anim;
 
+    int maxHealth = 100;
+    int currentHealth;
+    
+    [SerializeField]
+    HealthBar healthBar;
+
     private void Start()
     {
-        
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
         anim = GetComponent<Animator>();
     }
 
@@ -39,5 +46,11 @@ public class PlayerController : MonoBehaviour
         }
         else anim.SetBool("isWalking", false);
 
+    }
+
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+        healthBar.SetHealth(currentHealth);
     }
 }

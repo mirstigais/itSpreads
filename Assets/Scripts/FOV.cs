@@ -20,10 +20,14 @@ public class FOV : MonoBehaviour
     public float edgeDstThreshold;
     
     public MeshFilter viewMeshFilter;
+    public MeshRenderer viewMeshRenderer;
     Mesh viewMesh;
 
+    EnemyState stateScript;
     void Start()
     {
+        stateScript = this.transform.parent.GetComponent<EnemyState>();
+
         viewMesh = new Mesh();
         viewMesh.name = "View Mesh";
         viewMeshFilter.mesh = viewMesh;
@@ -49,8 +53,8 @@ public class FOV : MonoBehaviour
     void FindVisibleTargets()
     {
         visibleTargets.Clear();
+        viewMeshRenderer.material.color = Color.gray;
         Collider[] targetsInViewRadius = Physics.OverlapSphere(transform.position, viewRadius, targetMask);
-
         for (int i = 0; i < targetsInViewRadius.Length; i++)
         {
             Transform target = targetsInViewRadius[i].transform;
@@ -64,6 +68,11 @@ public class FOV : MonoBehaviour
                 if (!Physics.Raycast(transform.position, dirToTarget, dstToTarget, obstacleMask))
                 {
                     visibleTargets.Add(target);
+                    stateScript.EnemySeesPlayer(true,viewMeshRenderer);
+                }
+                else
+                {
+                    stateScript.EnemySeesPlayer(false, viewMeshRenderer);
                 }
             }
         }
