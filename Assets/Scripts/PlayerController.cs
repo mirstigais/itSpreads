@@ -15,6 +15,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     HealthBar healthBar;
 
+    [HideInInspector]
+    public Vector3 heading;
     private void Start()
     {
         currentHealth = maxHealth;
@@ -40,7 +42,7 @@ public class PlayerController : MonoBehaviour
             Vector3 rightMovement = right * moveSpeed * Time.deltaTime * Input.GetAxisRaw("Horizontal");
             Vector3 upMovement = forward * moveSpeed * Time.deltaTime * Input.GetAxisRaw("Vertical");
 
-            Vector3 heading = Vector3.Normalize(rightMovement + upMovement);
+            heading = Vector3.Normalize(rightMovement + upMovement);
             transform.forward = heading;
             transform.position += heading * moveSpeed * Time.deltaTime;
         }
